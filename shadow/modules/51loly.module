@@ -2,10 +2,10 @@
 #!desc=去除开屏广告+解锁完整视频
 
 [URL Rewrite]
-https://120play.longyuandingyi.com https://long.longyuandingyi.com 302
+\d+play.longyuandingyi.com long.longyuandingyi.com 302
 
 [MITM]
-hostname = play.longyuandingyi.com,s703.sn010.biz
+hostname = %APPEND% play.longyuandingyi.com,s703.sn010.biz
 
 [Script]
 51loly=type=http-response,pattern=s703.sn010.biz/main.dart.js,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/51lolyad.js
