@@ -1,0 +1,11 @@
+#!name=微信公众号去广告
+#!desc=去除微信公众号文章底部广告
+#!icon=https://raw.githubusercontent.com/deezertidal/private/main/icons/wechatad.png
+#!homepage=https://yfamily.vercel.app
+#!author=HotKids
+
+[MITM]
+hostname = mp.weixin.qq.com
+
+[Script]
+微信公众号去广告=type=http-response,pattern=https://mp.weixin.qq.com/mp/getappmsgad,requires-body=1,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/Wechat.js
