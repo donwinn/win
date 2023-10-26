@@ -6,24 +6,25 @@ let data = obj.data;
 const key = CryptoJS.enc.Utf8.parse('2acf7e91e9864673'),
 	iv = CryptoJS.enc.Utf8.parse('1c29882d3ddfcfd6');
 function encryptdata(data) {
-	const decryptdata = CryptoJS.AES.encrypt(data, key, {
+	const endata = CryptoJS.AES.encrypt(data, key, {
     iv: iv,
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
   });
-  return encryptdata.toString();
+  return endata.toString();
 }
 function decryptdata(data) {
-	const decryptdata = CryptoJS.AES.decrypt(data, key, {
+	const dedata = CryptoJS.AES.decrypt(data, key, {
     iv: iv,
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
   });
-  return decryptdata.toString( CryptoJS.enc.Utf8 );
+  return dedata.toString(CryptoJS.enc.Utf8);
 }
 if (url.indexOf('/user/userInfo') != -0x1) {
-  const dedata = decryptdata(data);
-  replacedata = dedata.replace( /"uid":\d+/g, '"uid":8888888' )
+	const dedata = decryptdata(data);
+	console.log('测试',dedata);
+	replacedata = dedata.replace( /"uid":\d+/g, '"uid":8888888' )
     .replace(/"expired_at":".*?"/g, '"expired_at":"9999-09-09 13:49:02"')
     .replace(/"aff":\d+/g, '"aff":8888888')
     .replace(/"nickname":".*?"/g, '"nickname":"ios鸡神"')
@@ -36,9 +37,9 @@ if (url.indexOf('/user/userInfo') != -0x1) {
     .replace(/"isVip":\w+/g, '"isVip":true')
     .replace(/"reg_tip":".*?"/g, '"reg_tip":""')
     .replace(/"vip_str":".*?"/g, '"vip_str":"🐔鸡神-帝王通卡"');
-  const endata = encryptdata(replacedata);
-  (obj.data = endata),
-    (body = JSON.stringify(obj));
+	const endata = encryptdata(replacedata);
+	obj.data = endata;
+	body = JSON.stringify(obj);
 }
 if (url.indexOf('/home/config') != -0x1) {
 	const dedata = decryptdata(data);
