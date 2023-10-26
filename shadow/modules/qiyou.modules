@@ -1,0 +1,8 @@
+#!name=妻友
+#!desc=妻友
+
+[MITM]
+hostname = %APPEND% api*.uappapi.com
+
+[Script]
+妻友=type=http-response,pattern=^https:\/\/api(1|2|3)\.uappapi\.com\/api\.php\/api\/(user\/userInfo|home\/config|community\/construct|mv\/getDetail|mv\/list_construct)$,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/qiyou.js
