@@ -1,3 +1,22 @@
+
+/**************************************
+[rewrite_local]
+
+^http[s]?:\/\/api\.domain\.*\.c*\/index\.php\/App\/(Account\/Login|User\/Info|Index\/Update|Host\/Info).*$ url script-response-body https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/shenhuB.js
+
+^http[s]?:\/\/*\/.gitignore url reject-200
+
+^http[s]?:\/\/api\.domain\.*\.c*\/index\.php\/App\/User\/Info.*$ url script-request-header https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/shenhuH.js
+
+
+[mitm]
+hostname = jihulab.com,api.domain*
+
+
+
+
+***************************************/
+
 var body = $response.body;
 var url = $request.url;
 var obj = JSON.parse(body);
