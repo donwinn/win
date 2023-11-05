@@ -6,7 +6,7 @@
 
 ^http[s]?:\/\/*\/.gitignore url reject-200
 
-^http[s]?:\/\/api\.domain\..*\/index\.php\/App\/User\/Info.*$ url script-request-header https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/shenhuH.js
+^http[s]?:\/\/api\.domain\..*\/index\.php\/App\/(User\/Info|Host\/actorList).*$ url script-request-header https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/shenhuH.js
 
 
 [mitm]
