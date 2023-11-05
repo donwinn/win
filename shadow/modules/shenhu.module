@@ -2,7 +2,7 @@
 #!desc=神户直播
 
 [MITM]
-hostname = %APPEND% api.domain.*.c*
+hostname = %APPEND% api.domain.service.douyin123.cc
 
 [Script]
 //body
