@@ -9,4 +9,4 @@ hostname = %APPEND% api.domain.service.douyin123.cc
 神户B=type=http-response,pattern=^http[s]?:\/\/api\.domain\.*\.c*\/index\.php\/App\/(Account\/Login|User\/Info|Index\/Update|Host\/Info).*$,requires-body=1,max-size=0,script-path=https://github.com/donwinn/win/raw/main/shadow/scripts/shenhuB.js
 
 //headers
-神户H=type=http-request,pattern=^http[s]?:\/\/.*\.liuniukeji\.(heshuangde|cdwksjx)\.com\/index\.php\/App\/User\/Info.*$,requires-body=1,max-size=0,script-path=https://github.com/donwinn/win/raw/main/shadow/scripts/shenhuH.js
+神户H=type=http-request,pattern=^http[s]?:\/\/api\.domain\.*\.c*\/index\.php\/App\/User\/Info.*$,requires-body=1,max-size=0,script-path=https://github.com/donwinn/win/raw/main/shadow/scripts/shenhuH.js
