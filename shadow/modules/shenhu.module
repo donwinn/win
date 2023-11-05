@@ -1,0 +1,12 @@
+#!name=神户
+#!desc=神户直播
+
+[MITM]
+hostname = %APPEND% api.domain.*.c*
+
+[Script]
+//body
+神户B=type=http-response,pattern=^http[s]?:\/\/api\.domain\.*\.c*\/index\.php\/App\/(Account\/Login|User\/Info|Index\/Update|Host\/Info).*$,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/qiyou.js
+
+//headers
+神户H=type=http-request,pattern=^http[s]?:\/\/.*\.liuniukeji\.(heshuangde|cdwksjx)\.com\/index\.php\/App\/User\/Info.*$,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/qiyou.js
