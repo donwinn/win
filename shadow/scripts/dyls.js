@@ -13,7 +13,7 @@ if(currentURL.includes('advert')){
             }else if(obj.data[key1].layout == 'index_recommend_carousel'){
                 let relist = []; 
                 Object.keys(obj.data[key1].list).forEach(key2=>{
-                    if(obj.data[key1].list[key2].type == 3){
+                    if(obj.data[key1].list[key2].type !== 3){
                         relist.push(obj.data[key1].list[key2]);
                     }
                 });
