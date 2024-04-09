@@ -9,7 +9,8 @@ if(currentURL.includes('advert')){
     if(Object.keys(obj.data).length!==0){
         Object.keys(obj.data).forEach(key1 =>{
             if(obj.data[key1].layout == 'advert_self'){
-                obj.data[key1].data.data = {};
+                obj.data[key1].data.data.image ='';
+                obj.data[key1].data.data.url ='';
             }else if(obj.data[key1].layout == 'index_recommend_carousel'){
                 let relist = []; 
                 Object.keys(obj.data[key1].list).forEach(key2=>{
