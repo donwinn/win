@@ -1,11 +1,11 @@
-var url = $response.url,obj = JSON.parse($response.body);
-if(url.includes('advert')){
+var currentURL = $request.url,obj = JSON.parse($response.body);
+if(currentURL.includes('advert')){
     if(Object.keys(obj.data).length!==0){
         Object.keys(obj.data).forEach(key =>{
           obj.data[key] = {};
         });
     };
-}else if(url.includes('index_recommend')){
+}else if(currentURL.includes('index_recommend')){
     if(Object.keys(obj.data).length!==0){
         Object.keys(obj.data).forEach(key1 =>{
             if(obj.data[key1].layout == 'advert_self'){
