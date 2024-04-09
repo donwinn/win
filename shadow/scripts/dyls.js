@@ -11,15 +11,13 @@ if(url.includes('advert')){
             if(obj.data[key1].layout == 'advert_self'){
                 obj.data[key1].data = {};
             }else if(obj.data[key1].layout == 'index_recommend_carousel'){
-                let indexs = []; 
+                let list = []; 
                 Object.keys(obj.data[key1].list).forEach(key2=>{
-                    if(obj.data[key1].list[key2].type == 3){
-                        indexs.push(key2);
+                    if(obj.data[key1].list[key2].type !== 3){
+                        list.push(key2);
                     }
                 });
-                indexs.forEach(index=>{
-                    obj.data[key1].list.splice(index,1)
-                });
+                obj.data[key1].list=list;
             }
         });
     };
