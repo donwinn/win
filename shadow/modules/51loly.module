@@ -2,7 +2,7 @@
 #!desc=去除开屏广告+解锁完整视频
 
 [MITM]
-hostname = %APPEND% s703.sn010.biz,s705.jffujq.com
+hostname = %APPEND% s703.sn010.biz,s703.jffujq.com,s705.jffujq.com
 
 [Script]
-51loly=type=http-response,pattern=https://(s703.sn010.biz)|(s705.jffujq.com)/main.dart.js.*,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/51lolyad.js
+51loly=type=http-response,pattern=https://(s703.sn010.biz)|(s705.jffujq.com)|(s703.jffujq.com)/main.dart.js.*,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/51lolyad.js
