@@ -1,5 +1,6 @@
 var body = $response.body;
-var data = body.replace("s.NF$.length!==0","!1");
-body = data.replace("p.e7(0,\"oauth_id\")","null").replace("b.r&&b.f","b.f=!1,b.r=!1,!1");
+var data = body.replace("s.NF$.length!==0","!1");//加载广告
+body = data.replace("p.e7(0,\"oauth_id\")","null");//随机id
+data = body.replace("r.fx=s==null?\"\":s","r.fx=s==null?\"\":s.replace(s.split(\"\.\")[0],\"https://long\");
 console.log('修改后数据：',body);
 $done({body:body});
