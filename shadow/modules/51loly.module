@@ -1,9 +1,6 @@
 #!name=51萝莉
 #!desc=去除开屏广告+解锁完整视频
 
-[URL Rewrite]
-https://(\d+play).(.*) https://long.$2 302
-
 [MITM]
 hostname = %APPEND% s703.sn010.biz,s703.jffujq.com,s705.jffujq.com
 
