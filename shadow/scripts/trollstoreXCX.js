@@ -1,7 +1,12 @@
-var obj = JSON.parse($response.body);
-if(Object.keys(obj).length!==0){
-   if (obj.data.attributes.adRead=='true'|obj.data.attributes.adRead==1){
-       obj.data.attributes.adRead = 'false';
+var body = $response.body;
+if($request.url.includes('posts/')|$request.url.includes('wx-set')){
+   var obj = JSON.parse(body);
+   if (obj.data.attributes.adRead){
+      obj.data.attributes.adRead = 'false';
+   }else if(obj.data.attributes.adSwitch){
+      obj.data.attributes.adSwitch = 'false';
    }
+   body = JSON.stringify(obj);
 };
-$done({body:JSON.stringify(obj)});
+$done({body});
+
