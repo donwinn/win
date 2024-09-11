@@ -8,7 +8,7 @@
 DOMAIN-SUFFIX,wxs.qq.com,REJECT-200 //去除小程序启动广告图片
 
 [MITM]
-hostname = %APPEND% mp.weixin.qq.com,ai.aifengkeji.com,data.shiciwenji.com
+hostname = %APPEND% mp.weixin.qq.com,ai.aifengkeji.com,data.shiciwenji.com,jumo.trollstore2.top
 
 [Script]
 //去除公众号文章底部广告
@@ -19,3 +19,6 @@ todayyoujia=type=http-response,pattern=https://data.shiciwenji.com/wxapp/jth/xcx
 
 //有趣工具箱
 youqu=type=http-response,pattern=https://ai.aifengkeji.com/chajian/getBtns.aspx,requires-body=1,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/youqubox.js
+
+//巨魔小程序
+torllstoreXCX=type=http-response,pattern=https://jumo.trollstore2.top/api/posts/*,requires-body=1,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/trollstoreXCX.js
