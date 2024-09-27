@@ -1,9 +1,10 @@
-var obj = JSON.parse($response.body);
-if(Object.keys(obj).length!==0){
-    for (let i = 0;i < obj.data.length;i++){
-        if (obj.data[i].lianJie!=''){
-            obj.data[i].leiXing = 'lj';
-        }
-    }
+var body = $response.body;
+if($request.url.includes('getBtns')){
+    var obj = JSON.parse(body);
+    obj.data[0].leiXing = 'lj';
+    body = JSON.stringify(obj);
+}else if($request.url.includes('h5pwd')){
+    var obj = JSON.parse(body);
+    obj.status = 200;
 };
-$done({body:JSON.stringify(obj)});
+$done({body});
