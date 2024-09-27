@@ -8,5 +8,5 @@ if($request.url.includes('getBtns')){
     obj.status = 200;
     body = JSON.stringify(obj);
 };
-console.log("111111111111111111111111111111111111111111111111111111111",body);
+console.log("测试测试测试测试测试测试测试111111111111111111111111111111111111111111111111111111111",body);
 $done({body});
