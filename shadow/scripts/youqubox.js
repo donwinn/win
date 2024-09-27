@@ -6,5 +6,6 @@ if($request.url.includes('getBtns')){
 }else if($request.url.includes('h5pwd')){
     var obj = JSON.parse(body);
     obj.status = 200;
+    body = JSON.stringify(obj);
 };
 $done({body});
