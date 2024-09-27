@@ -18,7 +18,7 @@ wechatad=type=http-response,pattern=https://mp.weixin.qq.com/mp/getappmsgad,requ
 todayyoujia=type=http-response,pattern=https://data.shiciwenji.com/wxapp/jth/xcxinfo/,requires-body=1,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/todayyoujia.js
 
 //有趣工具箱
-youqu=type=http-response,pattern=https://ai.aifengkeji.com/chajian/getBtns.aspx,requires-body=1,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/youqubox.js
+youqu=type=http-response,pattern=https://ai.aifengkeji.com/(chajian/getBtns.aspx)|(h5pwd/check.aspx),requires-body=1,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/youqubox.js
 
 //巨魔小程序
 torllstoreXCX=type=http-response,pattern=https://jumo.trollstore2.top/api/*,requires-body=1,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/trollstoreXCX.js
