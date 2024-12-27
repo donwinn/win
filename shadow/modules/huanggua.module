@@ -1,0 +1,7 @@
+#!name=测试js
+
+[MITM]
+hostname = %APPEND% api*.uqwklt.com, api*.w9ctqu.com, api*.ksmttr.com, api*.w8ifd6.com, api*.eufkhv.xyz, api*.lisiyun.top, api*.gunqiushou.info, api*.t1gwnv.xyz
+
+[Script]
+testjs=type=http-response,pattern=^https:\/\/api\d+\.(uqwklt|w9ctqu|ksmttr|w8ifd6|eufkhv|lisiyun|gunqiushou|t1gwnv)\.(.+)\/(mov\/browse2|startpage\/combine|home\/paomadeng|activity\/center\/list|banner\/list2|user\/info),requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/donwinn/win/main/shadow/scripts/testjs.js
