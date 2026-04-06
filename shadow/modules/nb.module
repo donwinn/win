@@ -1,0 +1,8 @@
+#!name=nbads
+#!desc=解锁会员
+
+[MITM]
+hostname = %APPEND% nbtool8.com
+
+[Script]
+nbvip=type=http-response,pattern=http://nbtool8.com:9527/nb/app,requires-body=1,max-size=0,script-path=https://fastly.jsdelivr.net/gh/donwinn/win@main/shadow/scripts/nb.js
