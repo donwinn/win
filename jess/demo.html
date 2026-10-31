@@ -14,7 +14,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 8px;             
+            padding: 8px;             /* 20 → 8，省出空间给视频 */
             overflow-y: auto;
         }
 
@@ -73,6 +73,7 @@
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
         }
 
+        /* 播放地址 → 解析|播放，做成可点击标签 */
         .url-label {
             padding: 0 12px;
             color: #8b95b5;
@@ -83,7 +84,13 @@
             border-radius: 40px 0 0 40px;
             border-right: 1px solid #2a2f42;
             white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
         }
+
+        .url-label:hover { background: #252b40; color: #cdd6f4; }
+        .url-label:active { background: #10141f; transform: scale(0.97); }
 
         .paste-label {
             padding: 0 12px;
@@ -137,6 +144,7 @@
             background: #1e2538;
             color: #e2e8ff;
             border: 1px solid #323a52;
+            white-space: nowrap;
         }
 
         .btn:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -152,6 +160,33 @@
             color: #fde68a;
         }
 
+        /* —— 解析出的地址按钮组 —— */
+        .dyn-btns {
+            display: none;          /* 由 JS 切换成 flex */
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .dyn-btn {
+            background: #1e2538;
+            border-color: #323a52;
+            color: #e2e8ff;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dyn-btn:hover { background: #2a3350; border-color: #3e4a6b; }
+
+        /* 正在播放的那个按钮 */
+        .dyn-btn.active {
+            background: #3b82f6;
+            border-color: #93c5fd;
+            color: #fff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+        }
+
         .status-area {
             background: #0b0e16;
             border-radius: 30px;
@@ -161,14 +196,21 @@
             gap: 6px;
             font-size: 11px;
             border: 1px solid #292f42;
+            max-width: 100%;
         }
 
-        .led { width: 8px; height: 8px; border-radius: 10px; background: #5b6380; }
+        .led { width: 8px; height: 8px; border-radius: 10px; background: #5b6380; flex-shrink: 0; }
         .led.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
         .led.red { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
         .led.yellow { background: #eab308; box-shadow: 0 0 6px #eab308; }
 
-        .status-text { color: #bfc9f0; font-family: monospace; }
+        .status-text {
+            color: #bfc9f0;
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .footer-tip {
             font-size: 10px;
@@ -234,13 +276,17 @@
 
     <div class="controls-bar">
         <div class="url-input-wrapper">
-            <span class="url-label">🎬 播放地址</span>
+            <!-- 原「🎬 播放地址」→ 可点击的「解析|播放」 -->
+            <span class="url-label" id="parseUrlBtn"
+                  title="点击读取剪贴板：支持 {&quot;名字1&quot;:&quot;url1&quot;,&quot;名字2&quot;:&quot;url2&quot;} 形式的地址组">🔎 解析|播放</span>
             <input type="text" id="streamUrl" placeholder="例如: http://xxx.xxx/live/stream.flv 或 ws://..." value="">
             <span class="paste-label" id="pasteUrlBtn">粘贴地址</span>
         </div>
         <div class="btn-group">
             <button class="btn btn-primary" id="playBtn">▶ 播放</button>
             <button class="btn btn-danger" id="stopBtn">⏹ 停止</button>
+            <!-- 解析出的名字按钮塞在这里 -->
+            <div class="dyn-btns" id="dynBtns"></div>
             <button class="btn btn-warning" id="muteBtn">🔇 静音</button>
             <button class="btn" id="diagBtn">🔍 检测</button>
         </div>
@@ -252,6 +298,7 @@
 
     <div class="footer-tip">
         📌 支持 FLV (HTTP/HTTPS/WS) ｜ 解码器: jessibuca + decoder.wasm<br>
+        🗂 点「解析|播放」可读取剪贴板里的 {"名字":"地址"} 列表，一键切换多个直播流<br>
         💡 报 fetchError 时先点「检测」，它会告诉你到底是 403 过期、404 写错，还是跨域被拦
     </div>
 </div>
@@ -290,6 +337,8 @@
     var statusMsg   = $('statusMsg');
     var toastEl     = $('toastMsg');
     var pasteBtn    = $('pasteUrlBtn');
+    var parseBtn    = $('parseUrlBtn');
+    var dynBtns     = $('dynBtns');
 
     /* ================= 状态 ================= */
     var player     = null;
@@ -302,6 +351,9 @@
     var playSeq    = 0;
     var hasAudio   = null;
     var audioTimer = null;
+
+    var listMode   = false;   // 是否处于"剪贴板地址组"模式
+    var activeName = '';      // 当前播放的按钮名（列表模式）
 
     var ERR_TEXT = {
         playError:                 ['地址为空',         '调用 play() 时 URL 是空的'],
@@ -383,6 +435,144 @@
         if (containerEl) containerEl.innerHTML = '';
     }
 
+    /* ================= 剪贴板地址组（列表模式） ================= */
+
+    /* 抽一个统一的剪贴板读取，失败时自己提示，返回 null */
+    async function readClipboardText() {
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+            tip('当前环境不支持一键读取剪贴板，请手动粘贴', true);
+            return null;
+        }
+        try {
+            var text = ((await navigator.clipboard.readText()) || '').trim();
+            if (!text) { tip('📭 剪贴板为空', true); return null; }
+            return text;
+        } catch (err) {
+            var msg = '无法读取剪贴板，请手动粘贴';
+            if (err && err.name === 'NotAllowedError') msg = '🔒 剪贴板权限被拒，请手动 Ctrl+V';
+            if (err && err.name === 'SecurityError') msg = '🔒 需要 HTTPS 或 localhost 才能读剪贴板';
+            tip(msg, true);
+            return null;
+        }
+    }
+
+    /* 尝试把文本解析成 [{name, url}, ...]，不符合返回 null */
+    function parseAddressList(text) {
+        if (!text) return null;
+        var t = String(text).replace(/^\uFEFF/, '').trim();
+        if (t.charAt(0) !== '{') return null;      // 快速排除，避免无谓 JSON.parse
+
+        var obj;
+        try { obj = JSON.parse(t); } catch (e) { return null; }
+        if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return null;
+
+        var keys = Object.keys(obj);
+        if (!keys.length) return null;
+
+        var list = [];
+        for (var i = 0; i < keys.length; i++) {
+            var k = keys[i];
+            var v = obj[k];
+            // 值必须是"非空字符串"的地址，任何一项不合法就整体不认
+            if (typeof v !== 'string' || !v.trim()) return null;
+            list.push({ name: k, url: v.trim() });
+        }
+        return list;
+    }
+
+    function setListMode(on) {
+        listMode = !!on;
+        playBtn.style.display = on ? 'none' : '';
+        stopBtn.style.display = on ? 'none' : '';
+        dynBtns.style.display = on ? 'flex' : 'none';
+        if (!on) dynBtns.innerHTML = '';
+    }
+
+    function exitListMode() {
+        if (listMode) setListMode(false);
+    }
+
+    /* 高亮指定名字的按钮 */
+    function highlightByName(name) {
+        if (!dynBtns) return false;
+        var btns = dynBtns.querySelectorAll('.dyn-btn');
+        var found = false;
+        for (var i = 0; i < btns.length; i++) {
+            var on = !!name && btns[i].dataset.name === name;
+            if (on) { btns[i].classList.add('active'); found = true; }
+            else { btns[i].classList.remove('active'); }
+        }
+        return found;
+    }
+
+    /* 按地址组渲染按钮 */
+    function renderListButtons(list) {
+        dynBtns.innerHTML = '';
+        setListMode(true);
+
+        var matchEl = null;
+
+        list.forEach(function (item) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'btn dyn-btn';
+            b.textContent = item.name;
+            b.title = item.name + ' → ' + item.url;
+            b.dataset.name = item.name;
+            b.dataset.url = item.url;
+
+            b.addEventListener('click', function () {
+                // 点的就是正在播的这个 → 停止
+                if (player && currentUrl === item.url && activeName === item.name) {
+                    stopPlay();
+                    tip('已停止：' + item.name);
+                    return;
+                }
+                startPlay(item.url, false, item.name);
+            });
+
+            dynBtns.appendChild(b);
+
+            if (activeName && item.name === activeName && item.url === currentUrl) {
+                matchEl = b;
+            }
+        });
+
+        // 重新解析时：当前播放的名字若已不在新列表里，就清掉高亮与名字
+        if (activeName && !matchEl) {
+            activeName = '';
+            if (player) setStatus('playing', '播放中');
+        }
+        if (matchEl) matchEl.classList.add('active');
+    }
+
+    /* 点击「解析|播放」 */
+    async function parseAndPlayFromClipboard() {
+        var text = await readClipboardText();
+        if (!text) return;
+
+        var list = parseAddressList(text);
+        if (list) {
+            renderListButtons(list);
+            setStatus('idle', '已解析 ' + list.length + ' 个地址');
+            tip('✅ 已解析 ' + list.length + ' 个地址，点击按钮即可播放');
+            return;
+        }
+
+        // 不是地址组：如果本身像个地址，就退回普通模式直接播
+        if (/^(https?|wss?):\/\//i.test(text)) {
+            exitListMode();
+            urlInput.value = text;
+            urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+            tip('剪贴板是单个地址，按普通模式播放');
+            startPlay(text);
+            return;
+        }
+
+        tip('剪贴板内容不是 {"名字":"地址"} 形式的地址组，也不是合法地址', true);
+    }
+
+    /* ================= auth_key 过期体检 ================= */
     function parseAuthKey(url) {
         var m = /[?&]auth_key=(\d{10})-/i.exec(url);
         if (!m) return null;
@@ -495,7 +685,7 @@
         setStatus('connecting', (delay / 1000) + 's 后重连 (' + retryCount + '/' + CFG.maxRetry + ')');
         clearTimeout(retryTimer);
         retryTimer = setTimeout(function () {
-            if (!manualStop && currentUrl) startPlay(currentUrl, true);
+            if (!manualStop && currentUrl) startPlay(currentUrl, true, activeName);
         }, delay);
     }
 
@@ -569,8 +759,8 @@
     function bindEvents() {
         player.on('load', function () {
             retryCount = 0;
-            setStatus('playing', '播放中');
-            tip('✅ 直播流已加载');
+            setStatus('playing', activeName ? ('播放中：' + activeName) : '播放中');
+            tip(activeName ? ('✅ 已加载：' + activeName) : '✅ 直播流已加载');
 
             if (muted) applyMute(true);
             updateMuteBtn();
@@ -581,7 +771,7 @@
         });
 
         player.on('play', function () {
-            setStatus('playing', '播放中');
+            setStatus('playing', activeName ? ('播放中：' + activeName) : '播放中');
             if (muted) applyMute(true);
         });
 
@@ -611,7 +801,9 @@
         }, CFG.audioWait);
     }
 
-    async function startPlay(url, isRetry) {
+    /* ================= 核心：播放 =================
+       name: 列表模式下按钮名字，普通播放传空 */
+    async function startPlay(url, isRetry, name) {
         url = (url || '').trim();
 
         if (!url) { tip('❌ 请输入有效的直播流地址', true); return; }
@@ -622,7 +814,11 @@
         }
 
         manualStop = false;
-        if (!isRetry) retryCount = 0;
+        if (!isRetry) {
+            retryCount = 0;
+            activeName = name || '';
+            highlightByName(activeName);
+        }
 
         var tk = parseAuthKey(url);
         if (tk && tk.expired) tip('⚠️ 该链接 auth_key 已于 ' + tk.text + ' 过期，播放大概率直接 403', true);
@@ -634,7 +830,9 @@
         try { localStorage.setItem(CFG.storeKey, url); } catch (e) {}
 
         hardReset();
-        setStatus('connecting', isRetry ? ('重连中 ' + retryCount + '/' + CFG.maxRetry) : '正在加载解码器...');
+        setStatus('connecting', isRetry
+            ? ('重连中 ' + retryCount + '/' + CFG.maxRetry + (activeName ? '：' + activeName : ''))
+            : ('正在加载解码器...' + (activeName ? '（' + activeName + '）' : '')));
 
         await sleep(CFG.rebuildGap);
         if (seq !== playSeq) return;
@@ -733,34 +931,27 @@
         playSeq++;
         hardReset();
         currentUrl = '';
+        activeName = '';
+        highlightByName('');
         freshContainer();
         showPlaceholder('播放已停止');
-        setStatus('idle', '已停止');
+        setStatus('idle', listMode ? '已停止，点上方按钮继续' : '已停止');
     }
 
+    /* ================= 粘贴单个地址 ================= */
     async function pasteFromClipboard() {
-        if (!navigator.clipboard || !navigator.clipboard.readText) {
-            tip('当前环境不支持一键粘贴，请手动 Ctrl+V', true);
-            urlInput.focus();
-            return;
-        }
-        try {
-            var text = (await navigator.clipboard.readText() || '').trim();
-            if (!text) { tip('📭 剪贴板为空', true); return; }
-            urlInput.value = text;
-            urlInput.dispatchEvent(new Event('input', { bubbles: true }));
-            urlInput.focus();
-            urlInput.setSelectionRange(text.length, text.length);
-            startPlay(text);
-        } catch (err) {
-            var msg = '无法读取剪贴板，请手动粘贴';
-            if (err && err.name === 'NotAllowedError') msg = '🔒 剪贴板权限被拒，请手动 Ctrl+V';
-            if (err && err.name === 'SecurityError') msg = '🔒 需要 HTTPS 或 localhost 才能读剪贴板';
-            tip(msg, true);
-            urlInput.focus();
-        }
+        var text = await readClipboardText();
+        if (!text) { urlInput.focus(); return; }
+
+        exitListMode();                 // 普通粘贴 → 回到播放/停止按钮模式
+        urlInput.value = text;
+        urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+        urlInput.focus();
+        urlInput.setSelectionRange(text.length, text.length);
+        startPlay(text);
     }
 
+    /* ================= 初始化 ================= */
     function init() {
         var param = new URLSearchParams(location.search).get('url');
         if (param) {
@@ -785,8 +976,16 @@
         muteBtn.addEventListener('click', toggleMute);
         diagBtn.addEventListener('click', diagnose);
 
+        // 解析|播放：读剪贴板里的 {名字:url} 地址组
+        if (parseBtn) {
+            parseBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                parseAndPlayFromClipboard();
+            });
+        }
+
         if (pasteBtn) {
-            pasteBtn.setAttribute('title', '从剪贴板粘贴地址并直接播放');
+            pasteBtn.setAttribute('title', '从剪贴板粘贴单个地址并直接播放');
             pasteBtn.addEventListener('click', function (e) {
                 e.preventDefault();
                 pasteFromClipboard();
