@@ -14,7 +14,7 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 8px;             /* 20 → 8，省出空间给视频 */
+            padding: 8px;
             overflow-y: auto;
         }
 
@@ -29,7 +29,6 @@
             margin: auto;
         }
 
-        /* 播放区：按视口剩余高度反算宽度，竖屏比例不变但整体放大 */
         .video-area {
             position: relative;
             pointer-events: auto;
@@ -46,7 +45,6 @@
             height: 100%;
         }
 
-        /* —— 控件栏：紧凑化 —— */
         .controls-bar {
             background: rgba(16, 20, 30, 0.95);
             backdrop-filter: blur(12px);
@@ -73,7 +71,6 @@
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
         }
 
-        /* 播放地址 → 解析|播放，做成可点击标签 */
         .url-label {
             padding: 0 12px;
             color: #8b95b5;
@@ -160,9 +157,8 @@
             color: #fde68a;
         }
 
-        /* —— 解析出的地址按钮组 —— */
         .dyn-btns {
-            display: none;          /* 由 JS 切换成 flex */
+            display: none;
             gap: 6px;
             flex-wrap: wrap;
             align-items: center;
@@ -179,7 +175,6 @@
 
         .dyn-btn:hover { background: #2a3350; border-color: #3e4a6b; }
 
-        /* 正在播放的那个按钮 */
         .dyn-btn.active {
             background: #3b82f6;
             border-color: #93c5fd;
@@ -249,13 +244,24 @@
 
         .toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+        .toast-message.at-top {
+            bottom: auto;
+            top: 16px;
+            transform: translateX(-50%) translateY(-20px);
+            box-shadow: 0 8px 22px rgba(220, 38, 38, 0.35);
+        }
+
+        .toast-message.at-top.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
         @media (max-width: 700px) {
             .controls-bar { flex-direction: column; align-items: stretch; }
             .btn-group { justify-content: center; }
             .toast-message { font-size: 11px; bottom: 60px; }
+            .toast-message.at-top { top: 12px; bottom: auto; }
         }
 
-        /* 手机等窄屏：让视频区域铺满宽度，比例保持 */
         @media (max-width: 480px) {
             .video-area {
                 width: 100%;
@@ -276,7 +282,6 @@
 
     <div class="controls-bar">
         <div class="url-input-wrapper">
-            <!-- 原「🎬 播放地址」→ 可点击的「解析|播放」 -->
             <span class="url-label" id="parseUrlBtn"
                   title="点击读取剪贴板：支持 {&quot;名字1&quot;:&quot;url1&quot;,&quot;名字2&quot;:&quot;url2&quot;} 形式的地址组">🔎 解析|播放</span>
             <input type="text" id="streamUrl" placeholder="例如: http://xxx.xxx/live/stream.flv 或 ws://..." value="">
@@ -285,7 +290,6 @@
         <div class="btn-group">
             <button class="btn btn-primary" id="playBtn">▶ 播放</button>
             <button class="btn btn-danger" id="stopBtn">⏹ 停止</button>
-            <!-- 解析出的名字按钮塞在这里 -->
             <div class="dyn-btns" id="dynBtns"></div>
             <button class="btn btn-warning" id="muteBtn">🔇 静音</button>
             <button class="btn" id="diagBtn">🔍 检测</button>
@@ -315,6 +319,7 @@
         decoderJs: './js/decoder.js',
         decodingDir: './js/',
         maxRetry: 3,
+        retryDelay: 30000,      // 重连冷却时间：固定 30 秒
         probeTimeout: 8000,
         rebuildGap: 100,
         audioWait: 3000,
@@ -346,14 +351,15 @@
     var muted      = true;
     var manualStop = false;
     var retryTimer = null;
+    var retryTickTimer = null;    // 重连倒计时专用
     var retryCount = 0;
     var toastTimer = null;
     var playSeq    = 0;
     var hasAudio   = null;
     var audioTimer = null;
 
-    var listMode   = false;   // 是否处于"剪贴板地址组"模式
-    var activeName = '';      // 当前播放的按钮名（列表模式）
+    var listMode   = false;
+    var activeName = '';
 
     var ERR_TEXT = {
         playError:                 ['地址为空',         '调用 play() 时 URL 是空的'],
@@ -378,9 +384,13 @@
         toastEl.style.background  = isError ? '#dc2626cc' : '#1e253ecc';
         toastEl.style.color       = isError ? '#fff0e0' : '#c0d0ff';
         toastEl.style.borderColor = isError ? '#ff8a6f' : '#3d4570';
+        toastEl.classList.toggle('at-top', !!isError);
         toastEl.classList.add('show');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, isError ? 4500 : 2200);
+        toastTimer = setTimeout(function () {
+            toastEl.classList.remove('show');
+            setTimeout(function () { if (!toastEl.classList.contains('show')) toastEl.classList.remove('at-top'); }, 220);
+        }, isError ? 4500 : 2200);
     }
 
     function setStatus(state, msg) {
@@ -423,6 +433,8 @@
     function hardReset() {
         clearTimeout(retryTimer);
         retryTimer = null;
+        clearInterval(retryTickTimer);      // 倒计时定时器一并清掉
+        retryTickTimer = null;
         clearTimeout(audioTimer);
         audioTimer = null;
         hasAudio = null;
@@ -437,7 +449,6 @@
 
     /* ================= 剪贴板地址组（列表模式） ================= */
 
-    /* 抽一个统一的剪贴板读取，失败时自己提示，返回 null */
     async function readClipboardText() {
         if (!navigator.clipboard || !navigator.clipboard.readText) {
             tip('当前环境不支持一键读取剪贴板，请手动粘贴', true);
@@ -456,11 +467,10 @@
         }
     }
 
-    /* 尝试把文本解析成 [{name, url}, ...]，不符合返回 null */
     function parseAddressList(text) {
         if (!text) return null;
         var t = String(text).replace(/^\uFEFF/, '').trim();
-        if (t.charAt(0) !== '{') return null;      // 快速排除，避免无谓 JSON.parse
+        if (t.charAt(0) !== '{') return null;
 
         var obj;
         try { obj = JSON.parse(t); } catch (e) { return null; }
@@ -473,12 +483,23 @@
         for (var i = 0; i < keys.length; i++) {
             var k = keys[i];
             var v = obj[k];
-            // 值必须是"非空字符串"的地址，任何一项不合法就整体不认
             if (typeof v !== 'string' || !v.trim()) return null;
+            var url = v.trim();
+	        // 不在线 → 跳过，不生成按钮
+	        if (!isAllowedHost(url)) continue;
             list.push({ name: k, url: v.trim() });
         }
         return list;
     }
+    
+    function isAllowedHost(url) {
+	    try {
+	        var u = new URL(url);
+	        return u.hostname.toLowerCase() === 'pl.ycscts.com';
+	    } catch (e) {
+	        return false;   // 解析失败（比如不是完整 URL）也算不合法
+	    }
+	}
 
     function setListMode(on) {
         listMode = !!on;
@@ -492,7 +513,6 @@
         if (listMode) setListMode(false);
     }
 
-    /* 高亮指定名字的按钮 */
     function highlightByName(name) {
         if (!dynBtns) return false;
         var btns = dynBtns.querySelectorAll('.dyn-btn');
@@ -505,7 +525,6 @@
         return found;
     }
 
-    /* 按地址组渲染按钮 */
     function renderListButtons(list) {
         dynBtns.innerHTML = '';
         setListMode(true);
@@ -522,7 +541,6 @@
             b.dataset.url = item.url;
 
             b.addEventListener('click', function () {
-                // 点的就是正在播的这个 → 停止
                 if (player && currentUrl === item.url && activeName === item.name) {
                     stopPlay();
                     tip('已停止：' + item.name);
@@ -538,7 +556,6 @@
             }
         });
 
-        // 重新解析时：当前播放的名字若已不在新列表里，就清掉高亮与名字
         if (activeName && !matchEl) {
             activeName = '';
             if (player) setStatus('playing', '播放中');
@@ -546,20 +563,22 @@
         if (matchEl) matchEl.classList.add('active');
     }
 
-    /* 点击「解析|播放」 */
     async function parseAndPlayFromClipboard() {
         var text = await readClipboardText();
         if (!text) return;
 
         var list = parseAddressList(text);
         if (list) {
+	        if (!list.length) {
+	            tip('地址组里没有可播放的链接，未生成按钮', true);
+	            return;
+	        }
             renderListButtons(list);
             setStatus('idle', '已解析 ' + list.length + ' 个地址');
             tip('✅ 已解析 ' + list.length + ' 个地址，点击按钮即可播放');
             return;
         }
 
-        // 不是地址组：如果本身像个地址，就退回普通模式直接播
         if (/^(https?|wss?):\/\//i.test(text)) {
             exitListMode();
             urlInput.value = text;
@@ -674,6 +693,7 @@
         if (NET_ERRORS.indexOf(info.type) >= 0 && !manualStop) scheduleRetry();
     }
 
+    /* 重连：固定 30 秒冷却 + 实时倒计时 */
     function scheduleRetry() {
         if (retryCount >= CFG.maxRetry) {
             setStatus('error', '重连已达上限');
@@ -681,12 +701,34 @@
             return;
         }
         retryCount++;
-        var delay = Math.min(1000 * Math.pow(2, retryCount - 1), 8000);
-        setStatus('connecting', (delay / 1000) + 's 后重连 (' + retryCount + '/' + CFG.maxRetry + ')');
+
+        var totalSec = Math.round(CFG.retryDelay / 1000);   // 30
+        var remain   = totalSec;
+
+        // 清理上一轮排程与倒计时
         clearTimeout(retryTimer);
+        clearInterval(retryTickTimer);
+
+        function renderCountdown() {
+            setStatus('connecting', remain + 's 后重连(' + totalSec + ')');
+        }
+        renderCountdown();
+
+        retryTickTimer = setInterval(function () {
+            remain--;
+            if (remain < 0) remain = 0;
+            renderCountdown();
+            if (remain === 0) {
+                clearInterval(retryTickTimer);
+                retryTickTimer = null;
+            }
+        }, 1000);
+
         retryTimer = setTimeout(function () {
+            clearInterval(retryTickTimer);
+            retryTickTimer = null;
             if (!manualStop && currentUrl) startPlay(currentUrl, true, activeName);
-        }, delay);
+        }, CFG.retryDelay);
     }
 
     function applyMute(want) {
@@ -801,8 +843,7 @@
         }, CFG.audioWait);
     }
 
-    /* ================= 核心：播放 =================
-       name: 列表模式下按钮名字，普通播放传空 */
+    /* ================= 核心：播放 ================= */
     async function startPlay(url, isRetry, name) {
         url = (url || '').trim();
 
@@ -829,6 +870,7 @@
         urlInput.value = url;
         try { localStorage.setItem(CFG.storeKey, url); } catch (e) {}
 
+        // 停掉上一轮重连/倒计时（hardReset 内已包含）
         hardReset();
         setStatus('connecting', isRetry
             ? ('重连中 ' + retryCount + '/' + CFG.maxRetry + (activeName ? '：' + activeName : ''))
@@ -929,7 +971,7 @@
         manualStop = true;
         retryCount = 0;
         playSeq++;
-        hardReset();
+        hardReset();                 // 内含 clearInterval(retryTickTimer)
         currentUrl = '';
         activeName = '';
         highlightByName('');
@@ -943,7 +985,7 @@
         var text = await readClipboardText();
         if (!text) { urlInput.focus(); return; }
 
-        exitListMode();                 // 普通粘贴 → 回到播放/停止按钮模式
+        exitListMode();
         urlInput.value = text;
         urlInput.dispatchEvent(new Event('input', { bubbles: true }));
         urlInput.focus();
@@ -976,7 +1018,6 @@
         muteBtn.addEventListener('click', toggleMute);
         diagBtn.addEventListener('click', diagnose);
 
-        // 解析|播放：读剪贴板里的 {名字:url} 地址组
         if (parseBtn) {
             parseBtn.addEventListener('click', function (e) {
                 e.preventDefault();
