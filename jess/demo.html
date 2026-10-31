@@ -3,14 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Jessibuca FLV播放器 - 自定义URL (支持一键粘贴)</title>
+    <title>Jessibuca FLV 播放器 - 优化版</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             background: #0a0e1a;
             font-family: system-ui, 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
@@ -18,32 +14,31 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 8px;             
+            overflow-y: auto;
         }
 
         .player-card {
             max-width: 1200px;
             width: 100%;
             background: #000;
-            border-radius: 24px;
+            border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.08);
+            margin: auto;
         }
 
+        /* 播放区：按视口剩余高度反算宽度，竖屏比例不变但整体放大 */
         .video-area {
             position: relative;
-		    /*position: absolute;*/
-            /*background: #000;
-            width: 100%;
-            aspect-ratio: 16 / 9;*/
-		    pointer-events: auto;
-		    transform: translate(0px, 0px);
-		    width: 430px;
-		    height: 800px;
-		    margin: 0 auto;
-
-		    flex-shrink: 0;  /* 防止被压缩 */
+            pointer-events: auto;
+            width: min(500px, calc((100vh - 120px) * 430 / 800));
+            aspect-ratio: 430 / 800;
+            height: auto;
+            min-width: 320px;
+            margin: 0 auto;
+            flex-shrink: 0;
         }
 
         #jessibuca-container {
@@ -51,23 +46,24 @@
             height: 100%;
         }
 
+        /* —— 控件栏：紧凑化 —— */
         .controls-bar {
             background: rgba(16, 20, 30, 0.95);
             backdrop-filter: blur(12px);
-            padding: 16px 20px;
+            padding: 8px 12px;
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .url-input-wrapper {
             flex: 4;
-            min-width: 240px;
+            min-width: 200px;
             display: flex;
             background: #0f111a;
-            border-radius: 60px;
+            border-radius: 40px;
             border: 1px solid #2a2f42;
             transition: all 0.2s;
         }
@@ -77,28 +73,26 @@
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
         }
 
-        /* 左侧原始标签: 播放地址 */
         .url-label {
-            padding: 0 18px;
+            padding: 0 12px;
             color: #8b95b5;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 500;
-            line-height: 44px;
+            line-height: 34px;
             background: #1a1e2c;
-            border-radius: 60px 0 0 60px;
+            border-radius: 40px 0 0 40px;
             border-right: 1px solid #2a2f42;
             white-space: nowrap;
         }
 
-        /* 新增的粘贴标签: 完全复用原标签样式，位于右侧，圆角相反 */
         .paste-label {
-            padding: 0 18px;
+            padding: 0 12px;
             color: #8b95b5;
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 500;
-            line-height: 44px;
+            line-height: 34px;
             background: #1a1e2c;
-            border-radius: 0 60px 60px 0;
+            border-radius: 0 40px 40px 0;
             border-left: 1px solid #2a2f42;
             white-space: nowrap;
             cursor: pointer;
@@ -106,144 +100,97 @@
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
         }
 
-        .paste-label:hover {
-            background: #252b40;
-            color: #cdd6f4;
-            border-left-color: #3e455e;
-        }
-
-        .paste-label:active {
-            background: #10141f;
-            transform: scale(0.97);
-        }
+        .paste-label:hover { background: #252b40; color: #cdd6f4; border-left-color: #3e455e; }
+        .paste-label:active { background: #10141f; transform: scale(0.97); }
 
         #streamUrl {
             flex: 1;
             background: transparent;
             border: none;
-            padding: 0 16px;
-            height: 44px;
+            padding: 0 10px;
+            height: 34px;
             color: #f0f3fa;
-            font-size: 13px;
+            font-size: 12px;
             font-family: monospace;
             outline: none;
-            min-width: 0; /* 防止flex溢出 */
+            min-width: 0;
         }
 
-        #streamUrl::placeholder {
-            color: #4a516e;
-            font-family: system-ui;
-        }
+        #streamUrl::placeholder { color: #4a516e; font-family: system-ui; }
 
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
 
         .btn {
-            padding: 0 20px;
-            height: 44px;
-            border-radius: 44px;
+            padding: 0 14px;
+            height: 34px;
+            border-radius: 34px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             transition: 0.2s;
-            border: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             background: #1e2538;
             color: #e2e8ff;
             border: 1px solid #323a52;
         }
 
-        .btn-primary {
-            background: #3b82f6;
-            border-color: #3b82f6;
-            color: white;
-        }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-primary { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+        .btn-primary:hover { background: #2563eb; transform: scale(0.97); }
+        .btn-danger { background: #dc2626; border-color: #dc2626; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-warning { background: #f59e0b; border-color: #f59e0b; color: #1e1b12; }
 
-        .btn-primary:hover {
-            background: #2563eb;
-            transform: scale(0.97);
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            border-color: #dc2626;
-        }
-
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-
-        .btn-warning {
-            background: #f59e0b;
-            border-color: #f59e0b;
-            color: #1e1b12;
+        .btn-warning.is-muted {
+            background: #78350f;
+            border-color: #92400e;
+            color: #fde68a;
         }
 
         .status-area {
             background: #0b0e16;
-            border-radius: 40px;
-            padding: 5px 16px;
+            border-radius: 30px;
+            padding: 3px 10px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 12px;
+            gap: 6px;
+            font-size: 11px;
             border: 1px solid #292f42;
         }
 
-        .led {
-            width: 10px;
-            height: 10px;
-            border-radius: 10px;
-            background: #5b6380;
-        }
+        .led { width: 8px; height: 8px; border-radius: 10px; background: #5b6380; }
+        .led.green { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+        .led.red { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+        .led.yellow { background: #eab308; box-shadow: 0 0 6px #eab308; }
 
-        .led.green {
-            background: #22c55e;
-            box-shadow: 0 0 6px #22c55e;
-        }
-
-        .led.red {
-            background: #ef4444;
-        }
-
-        .led.yellow {
-            background: #eab308;
-        }
-
-        .status-text {
-            color: #bfc9f0;
-            font-family: monospace;
-        }
+        .status-text { color: #bfc9f0; font-family: monospace; }
 
         .footer-tip {
-            font-size: 11px;
+            font-size: 10px;
             text-align: center;
-            padding: 10px;
+            padding: 6px 10px;
             color: #5a6382;
             background: #05070c;
             border-top: 1px solid #181e2c;
+            line-height: 1.5;
         }
 
-        /* 轻提示toast样式 (非阻塞友好提示) */
         .toast-message {
             position: fixed;
-            bottom: 90px;
+            bottom: 70px;
             left: 50%;
             transform: translateX(-50%) translateY(20px);
             background: #1e253ecc;
             backdrop-filter: blur(12px);
             color: #c0d0ff;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 13px;
+            padding: 8px 16px;
+            border-radius: 14px;
+            font-size: 12px;
             font-weight: 500;
             border: 1px solid #3d4570;
             box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
@@ -252,28 +199,27 @@
             opacity: 0;
             transition: opacity 0.2s, transform 0.2s;
             font-family: monospace;
-            white-space: nowrap;
             max-width: 90vw;
-            white-space: normal;
             word-break: break-all;
             text-align: center;
-        }
-        .toast-message.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
+            line-height: 1.6;
         }
 
+        .toast-message.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
         @media (max-width: 700px) {
-            .controls-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .btn-group {
-                justify-content: center;
-            }
-            .toast-message {
-                font-size: 11px;
-                bottom: 70px;
+            .controls-bar { flex-direction: column; align-items: stretch; }
+            .btn-group { justify-content: center; }
+            .toast-message { font-size: 11px; bottom: 60px; }
+        }
+
+        /* 手机等窄屏：让视频区域铺满宽度，比例保持 */
+        @media (max-width: 480px) {
+            .video-area {
+                width: 100%;
+                min-width: 0;
+                height: auto;
+                aspect-ratio: 430 / 800;
             }
         }
     </style>
@@ -290,409 +236,583 @@
         <div class="url-input-wrapper">
             <span class="url-label">🎬 播放地址</span>
             <input type="text" id="streamUrl" placeholder="例如: http://xxx.xxx/live/stream.flv 或 ws://..." value="">
-            <!-- 新增粘贴标签 样式与左侧完全一致，圆角方向为右侧圆角 -->
-            <span class="paste-label" id="pasteUrlBtn">
-                粘贴地址
-            </span>
+            <span class="paste-label" id="pasteUrlBtn">粘贴地址</span>
         </div>
         <div class="btn-group">
             <button class="btn btn-primary" id="playBtn">▶ 播放</button>
             <button class="btn btn-danger" id="stopBtn">⏹ 停止</button>
             <button class="btn btn-warning" id="muteBtn">🔇 静音</button>
+            <button class="btn" id="diagBtn">🔍 检测</button>
         </div>
         <div class="status-area">
             <div class="led" id="statusLed"></div>
             <span class="status-text" id="statusMsg">待机</span>
         </div>
     </div>
+
     <div class="footer-tip">
-        📌 支持 FLV (HTTP/HTTPS/WS)  |  解码器: jessibuca + decoder.wasm  |  💡 点击「粘贴」按钮快速填入剪贴板地址
+        📌 支持 FLV (HTTP/HTTPS/WS) ｜ 解码器: jessibuca + decoder.wasm<br>
+        💡 报 fetchError 时先点「检测」，它会告诉你到底是 403 过期、404 写错，还是跨域被拦
     </div>
 </div>
 
-<!-- 轻提示容器 -->
-<div id="toastMsg" class="toast-message">📋 提示信息</div>
+<div id="toastMsg" class="toast-message">提示信息</div>
+
 <script src="./js/jessibuca_v3.3.21.js"></script>
 <script>
-    // ============================================================
-    // 本地文件结构:
-    //   jessibuca/
-    //     js/
-    //       jessibuca_v3.3.21.js
-    //       decoder.js
-    //       decoder.wasm
-    //
-    // 使用方法:
-    //   1. 将上述文件和 index.html 放在合适目录 (保持相对路径)
-    //   2. 用 http-server / live-server 启动本地服务 (不要用 file:// 协议)
-    //   3. 在输入框填入 flv 直播地址, 点击播放
-    // ============================================================
+(function () {
+    'use strict';
 
-    let player = null;
-    let isMutedFlag = false;
-    let currentUrl = '';
+    /* ================= 配置区 ================= */
+    var CFG = {
+        decoderJs: './js/decoder.js',
+        decodingDir: './js/',
+        maxRetry: 3,
+        probeTimeout: 8000,
+        rebuildGap: 100,
+        audioWait: 3000,
+        storeKey: 'jessibuca_last_url',
+        storeMute: 'jessibuca_muted',
+        BeforVolume: null
+    };
 
-    // DOM 元素
-    const container = document.getElementById('jessibuca-container');
-    const urlInput = document.getElementById('streamUrl');
-    const playBtn = document.getElementById('playBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const muteBtn = document.getElementById('muteBtn');
-    const statusLed = document.getElementById('statusLed');
-    const statusMsg = document.getElementById('statusMsg');
-    const pasteBtn = document.getElementById('pasteUrlBtn');   // 新增粘贴按钮
-    const toastEl = document.getElementById('toastMsg');
+    /* ================= DOM ================= */
+    function $(id) { return document.getElementById(id); }
 
-    // 显示浮动提示 (复用toast)
-    function showToast(msg, isError = false) {
+    var videoArea   = document.querySelector('.video-area');
+    var containerEl = $('jessibuca-container');
+    var urlInput    = $('streamUrl');
+    var playBtn     = $('playBtn');
+    var stopBtn     = $('stopBtn');
+    var muteBtn     = $('muteBtn');
+    var diagBtn     = $('diagBtn');
+    var statusLed   = $('statusLed');
+    var statusMsg   = $('statusMsg');
+    var toastEl     = $('toastMsg');
+    var pasteBtn    = $('pasteUrlBtn');
+
+    /* ================= 状态 ================= */
+    var player     = null;
+    var currentUrl = '';
+    var muted      = true;
+    var manualStop = false;
+    var retryTimer = null;
+    var retryCount = 0;
+    var toastTimer = null;
+    var playSeq    = 0;
+    var hasAudio   = null;
+    var audioTimer = null;
+
+    var ERR_TEXT = {
+        playError:                 ['地址为空',         '调用 play() 时 URL 是空的'],
+        fetchError:                ['HTTP 拉流失败',    '多为跨域未放行、auth_key 过期(403) 或地址不可达'],
+        websocketError:            ['WS 拉流失败',      'ws/wss 地址错误，或服务端拒绝握手'],
+        httpError:                 ['HTTP 状态异常',    '服务器返回了非 2xx 状态码'],
+        wasmDecodeError:           ['软解失败',         '码流编码不受支持，或 decoder.wasm 没加载到'],
+        mediaSourceH265NotSupport: ['MSE 不支持 H.265', '浏览器 MSE 解不了 H.265'],
+        webcodecsH265NotSupport:   ['硬解不支持 H.265', '当前浏览器 WebCodecs 不支持 H.265'],
+        webcodecsDecodeError:      ['硬解失败',         '正常应自动降级软解，仍失败请查码流'],
+        notSupported:              ['格式不支持',       '容器或编码不被支持'],
+        unknown:                   ['未知错误',         '打开 F12 控制台看详细日志']
+    };
+
+    var NET_ERRORS = ['fetchError', 'websocketError', 'httpError'];
+
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    function tip(msg, isError) {
         if (!toastEl) return;
-        toastEl.textContent = msg || (isError ? '❌ 操作失败' : '✓ 完成');
-        if (isError) {
-            toastEl.style.background = '#dc2626cc';
-            toastEl.style.color = '#fff0e0';
-            toastEl.style.borderColor = '#ff8a6f';
-        } else {
-            toastEl.style.background = '#1e253ecc';
-            toastEl.style.color = '#c0d0ff';
-            toastEl.style.borderColor = '#3d4570';
-        }
+        toastEl.textContent = msg;
+        toastEl.style.background  = isError ? '#dc2626cc' : '#1e253ecc';
+        toastEl.style.color       = isError ? '#fff0e0' : '#c0d0ff';
+        toastEl.style.borderColor = isError ? '#ff8a6f' : '#3d4570';
         toastEl.classList.add('show');
-        setTimeout(() => {
-            toastEl.classList.remove('show');
-            // 重置背景风格
-            setTimeout(() => {
-                if (!isError) {
-                    toastEl.style.background = '#1e253ecc';
-                    toastEl.style.color = '#c0d0ff';
-                    toastEl.style.borderColor = '#3d4570';
-                }
-            }, 200);
-        }, 2000);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, isError ? 4500 : 2200);
     }
 
-    // 旧版 showTip 兼容 (统一使用toast)
-    function showTip(msg, isError = false) {
-        showToast(msg, isError);
-    }
-
-    // 更新状态指示器
     function setStatus(state, msg) {
-        statusMsg.innerText = msg;
+        statusMsg.textContent = msg;
         statusLed.className = 'led';
-        if (state === 'connecting') {
-            statusLed.classList.add('yellow');
-        } else if (state === 'playing') {
-            statusLed.classList.add('green');
-        } else if (state === 'error') {
-            statusLed.classList.add('red');
-        } else {
-            // idle
-        }
+        if (state === 'connecting') statusLed.classList.add('yellow');
+        else if (state === 'playing') statusLed.classList.add('green');
+        else if (state === 'error') statusLed.classList.add('red');
     }
 
-    // 销毁播放器实例 (彻底清理)
-    function destroyPlayer() {
+    function freshContainer() {
+        var old = document.getElementById('jessibuca-container');
+        var next = document.createElement('div');
+        next.id = 'jessibuca-container';
+        next.style.width = '100%';
+        next.style.height = '100%';
+
+        if (old && old.parentNode) {
+            old.parentNode.replaceChild(next, old);
+        } else if (videoArea) {
+            videoArea.appendChild(next);
+        }
+        containerEl = next;
+        return next;
+    }
+
+    function showPlaceholder(text) {
+        if (!containerEl) freshContainer();
+        containerEl.innerHTML = '';
+        var box = document.createElement('div');
+        box.style.cssText = 'width:100%;height:100%;background:#0a0e18;display:flex;' +
+            'align-items:center;justify-content:center;flex-direction:column;gap:12px;' +
+            'color:#6a729b;font-size:14px;text-align:center;padding:24px;line-height:1.8;';
+        box.innerHTML = '<div style="font-size:48px;">📺</div>' +
+            '<div>' + (text || '等待播放') + '</div>' +
+            '<div style="font-size:11px;">Jessibuca 解码器待命</div>';
+        containerEl.appendChild(box);
+    }
+
+    function hardReset() {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+        clearTimeout(audioTimer);
+        audioTimer = null;
+        hasAudio = null;
+
         if (player) {
-            try {
-                // 先暂停播放
-                if (typeof player.pause === 'function') {
-                    player.pause();
-                }
-                // 再销毁
-                player.destroy();
-                const containerRef = player.getContainer ? player.getContainer() : null;
-                if (containerRef && containerRef.parentNode) {
-                    // 只是确保不残留; 因为外层已经手动清空container, 但以防万一
-                }
-            } catch (e) {
-                console.warn('销毁异常', e);
-            }
+            try { if (typeof player.pause === 'function') player.pause(); } catch (e) {}
+            try { player.destroy(); } catch (e) { console.warn('destroy 异常', e); }
             player = null;
         }
+        if (containerEl) containerEl.innerHTML = '';
     }
 
-    // 显示占位黑底
-    function showPlaceholder(text = '等待播放') {
-        destroyPlayer();
-        // 清空容器所有子节点
-        while (container.firstChild) {
-            container.removeChild(container.firstChild);
-        }
-        const placeholder = document.createElement('div');
-        placeholder.style.width = '100%';
-        placeholder.style.height = '100%';
-        placeholder.style.backgroundColor = '#0a0e18';
-        placeholder.style.display = 'flex';
-        placeholder.style.alignItems = 'center';
-        placeholder.style.justifyContent = 'center';
-        placeholder.style.flexDirection = 'column';
-        placeholder.style.gap = '12px';
-        placeholder.style.color = '#6a729b';
-        placeholder.style.fontSize = '14px';
-        placeholder.innerHTML = `
-            <div style="font-size: 48px;">📺</div>
-            <div>${text}</div>
-            <div style="font-size: 11px;">Jessibuca 解码器待命</div>
-        `;
-        container.appendChild(placeholder);
-        setStatus('idle', '已停止');
+    function parseAuthKey(url) {
+        var m = /[?&]auth_key=(\d{10})-/i.exec(url);
+        if (!m) return null;
+        var ts = Number(m[1]) * 1000;
+        var d = new Date(ts);
+        var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
+        return {
+            ts: ts,
+            expired: Date.now() > ts,
+            text: d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+                  ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
+        };
     }
 
-    // 核心: 初始化并播放指定URL
-    async function startPlay(url) {
-        if (!url || url.trim() === '') {
-            showTip('❌ 请输入有效的直播流地址', true);
-            return false;
+    function probeStream(url) {
+        var ac = new AbortController();
+        var timer = setTimeout(function () { ac.abort(); }, CFG.probeTimeout);
+        return fetch(url, {
+            method: 'GET', mode: 'cors', cache: 'no-store',
+            credentials: 'omit', signal: ac.signal
+        }).then(function (res) {
+            var info = {
+                ok: res.ok, status: res.status,
+                contentType: res.headers.get('content-type') || ''
+            };
+            ac.abort();
+            return info;
+        }).catch(function (err) {
+            return {
+                ok: false, status: 0,
+                netError: (err && err.name ? err.name : 'Error') + ': ' + (err && err.message ? err.message : '')
+            };
+        }).then(function (r) { clearTimeout(timer); return r; });
+    }
+
+    function explainProbe(r, url) {
+        if (r.status === 200) {
+            return { ok: true, msg: '服务器返回 200，跨域也放行了。地址本身没问题，可点播放。' +
+                (r.contentType ? '（Content-Type: ' + r.contentType + '）' : '') };
+        }
+        if (r.status === 401 || r.status === 403) {
+            var tk = parseAuthKey(url);
+            return { ok: false, msg: '服务器返回 ' + r.status + '，链接被拒绝。' +
+                (tk ? 'auth_key 过期时间为 ' + tk.text +
+                    (tk.expired ? '，已经过期，请回平台重新生成！' : '，尚未过期，检查签名/防盗链/白名单。') : '') };
+        }
+        if (r.status === 404) {
+            return { ok: false, msg: '服务器返回 404，路径写错了，检查设备号、_b3 后缀和端口。' };
+        }
+        if (r.status === 0 && r.netError) {
+            return { ok: false, msg: '请求在浏览器层就失败了（' + r.netError + '）。' +
+                '典型原因是跨域未放行或协议不一致（https 页面拉 http 流）。需用本地代理绕过。' };
+        }
+        return { ok: false, msg: '返回状态 ' + r.status + '，请对照 F12 Network 面板确认。' };
+    }
+
+    async function diagnose() {
+        var url = urlInput.value.trim();
+        if (!url) { tip('先填一个流地址再检测', true); return; }
+
+        var tk = parseAuthKey(url);
+        if (tk && tk.expired) tip('⚠️ auth_key 已于 ' + tk.text + ' 过期，这条链接必定失败', true);
+
+        setStatus('connecting', '检测中...');
+        tip('正在探测服务器响应头，请稍候...');
+        diagBtn.disabled = true;
+        try {
+            var r = await probeStream(url);
+            console.log('[probe]', url, r);
+            var e = explainProbe(r, url);
+            tip(e.msg, !e.ok);
+            setStatus(e.ok ? 'idle' : 'error', e.ok ? '地址可用' : '检测未通过');
+        } finally {
+            diagBtn.disabled = false;
+        }
+    }
+
+    function normalizeError(err) {
+        if (!err) return { type: 'unknown', raw: '' };
+        if (typeof err === 'string') return { type: err, raw: err };
+        return {
+            type: err.type || err.name || err.errorType || 'unknown',
+            raw: err.message || err.msg || JSON.stringify(err)
+        };
+    }
+
+    function handleError(err) {
+        var info = normalizeError(err);
+        var dict = ERR_TEXT[info.type] || ERR_TEXT.unknown;
+        console.error('[jessibuca error]', info.type, err);
+
+        setStatus('error', dict[0]);
+        var extra = '';
+        if (info.type === 'fetchError') {
+            extra = ' 排查顺序：① 重新生成链接（auth_key 会过期）② 用「检测」看是否跨域 ③ 本地代理绕过';
+        }
+        tip('❌ ' + dict[0] + '：' + dict[1] + extra, true);
+
+        if (NET_ERRORS.indexOf(info.type) >= 0 && !manualStop) scheduleRetry();
+    }
+
+    function scheduleRetry() {
+        if (retryCount >= CFG.maxRetry) {
+            setStatus('error', '重连已达上限');
+            tip('已重试 ' + CFG.maxRetry + ' 次仍未成功，请先点「检测」确认链接状态', true);
+            return;
+        }
+        retryCount++;
+        var delay = Math.min(1000 * Math.pow(2, retryCount - 1), 8000);
+        setStatus('connecting', (delay / 1000) + 's 后重连 (' + retryCount + '/' + CFG.maxRetry + ')');
+        clearTimeout(retryTimer);
+        retryTimer = setTimeout(function () {
+            if (!manualStop && currentUrl) startPlay(currentUrl, true);
+        }, delay);
+    }
+
+    function applyMute(want) {
+        if (!player) return false;
+
+        var ok = false;
+        try {
+            if (want) {
+                if (player.player.volume !== 0) {CFG.BeforVolume = Number(player.player.volume.toFixed(2))}
+                if (typeof player.mute === 'function') { player.mute(); ok = true; }
+            } else {
+                if (typeof player.cancelMute === 'function') { player.cancelMute(); ok = true; }
+                if (typeof player.audioResume === 'function') { player.audioResume(); }
+                if (typeof player.setVolume === 'function') { player.setVolume(CFG.BeforVolume||0.5); ok = true; }
+            }
+        } catch (e) {
+            console.warn('切换音量异常', e);
+        }
+        return ok;
+    }
+
+    function readRealMute() {
+        if (!player) return null;
+        try {
+            if (typeof player.isMute === 'function') return !!player.isMute();
+        } catch (e) {}
+        return null;
+    }
+
+    function updateMuteBtn() {
+        if (!muteBtn) return;
+        muteBtn.textContent = muted ? '🔊 取消静音' : '🔇 静音';
+        muteBtn.classList.toggle('is-muted', muted);
+    }
+
+    function toggleMute() {
+        if (!player) {
+            tip('播放器未启动，先点播放再静音', true);
+            return;
         }
 
+        var want = !muted;
+        var applied = applyMute(want);
+
+        if (!applied) {
+            tip('当前播放器版本没有 mute / setVolume 方法，无法控制音量', true);
+            return;
+        }
+
+        muted = want;
+        try { localStorage.setItem(CFG.storeMute, muted ? '1' : '0'); } catch (e) {}
+        updateMuteBtn();
+
+        var real = readRealMute();
+        if (real !== null && real !== muted) {
+            muted = real;
+            updateMuteBtn();
+            tip('音量控制未生效（' + (real ? '仍为静音' : '仍非静音') + '），可能是流本身没有音轨', true);
+            return;
+        }
+
+        if (!muted && hasAudio === false) {
+            tip('已取消静音，但这条流没有音轨，所以听不到声音', true);
+            return;
+        }
+
+        tip(muted ? '已静音' : (hasAudio === false ? '已取消静音（该流无音轨）' : '已取消静音'));
+    }
+
+    function bindEvents() {
+        player.on('load', function () {
+            retryCount = 0;
+            setStatus('playing', '播放中');
+            tip('✅ 直播流已加载');
+
+            if (muted) applyMute(true);
+            updateMuteBtn();
+
+            setTimeout(function () {
+                try { if (player && typeof player.resize === 'function') player.resize(); } catch (e) {}
+            }, 150);
+        });
+
+        player.on('play', function () {
+            setStatus('playing', '播放中');
+            if (muted) applyMute(true);
+        });
+
+        player.on('error', handleError);
+
+        player.on('timeout', function () {
+            console.warn('[事件] 流超时');
+            setStatus('error', '流超时');
+            tip('⚠️ 连接超时，播放器将尝试重连', true);
+            if (!manualStop) scheduleRetry();
+        });
+
+        player.on('audioInfo', function (info) {
+            hasAudio = true;
+            console.log('[事件] 音频信息', info);
+        });
+
+        player.on('videoInfo', function (info) { console.log('[事件] 视频信息', info); });
+        player.on('loadmetadata', function () { console.log('[事件] 已获取流元信息'); });
+
+        clearTimeout(audioTimer);
+        audioTimer = setTimeout(function () {
+            if (hasAudio === null) {
+                hasAudio = false;
+                console.warn('[音频] 未收到音轨信息，判定该流无音频');
+            }
+        }, CFG.audioWait);
+    }
+
+    async function startPlay(url, isRetry) {
+        url = (url || '').trim();
+
+        if (!url) { tip('❌ 请输入有效的直播流地址', true); return; }
         if (typeof Jessibuca === 'undefined') {
-            showTip('❌ Jessibuca 库加载失败，请检查js路径', true);
             setStatus('error', '库加载失败');
-            return false;
+            tip('❌ Jessibuca 未加载，请检查 ./js/jessibuca_v3.3.21.js 路径', true);
+            return;
         }
 
-        // 🔥 完全销毁旧播放器
-        if (player) {
-            destroyPlayer();
-        }
+        manualStop = false;
+        if (!isRetry) retryCount = 0;
 
-        // 🔥 清空容器 (确保干净)
-        while (container.firstChild) {
-            container.removeChild(container.firstChild);
-        }
-        container.innerHTML = '';
-        
-        // 短暂延迟，确保DOM完全重置
-        await new Promise(resolve => setTimeout(resolve, 50));
+        var tk = parseAuthKey(url);
+        if (tk && tk.expired) tip('⚠️ 该链接 auth_key 已于 ' + tk.text + ' 过期，播放大概率直接 403', true);
 
-        setStatus('connecting', '正在加载解码器...');
-        showTip('初始化 Jessibuca + decoder.wasm ...');
+        var seq = ++playSeq;
+
+        currentUrl = url;
+        urlInput.value = url;
+        try { localStorage.setItem(CFG.storeKey, url); } catch (e) {}
+
+        hardReset();
+        setStatus('connecting', isRetry ? ('重连中 ' + retryCount + '/' + CFG.maxRetry) : '正在加载解码器...');
+
+        await sleep(CFG.rebuildGap);
+        if (seq !== playSeq) return;
+
+        freshContainer();
 
         try {
-            const options = {
-                container: container,
-                url: url.trim(),
+            player = new Jessibuca({
+                container: containerEl,
                 autoplay: true,
-                useWebFullScreen: false,
                 isResize: true,
+                useMSE: false,
+                useWCS: false,
+                videoBuffer: 0.2,
                 supportDblclickFullscreen: true,
                 loadingText: '加载中...',
-                decodingPath: './js/',
-                decoder: './js/decoder.js',
-                showBandwidth: true, // 显示网速
-                operateBtns: {
-                    fullscreen: true, //全屏按钮
-                    screenshot: false,//截屏按钮
-                    play: true,       //播放按钮
-                    audio: true,      //音量按钮
-                    recorder: false   //录制按钮
-                },
-                controlAutoHide: true, //自动隐藏工具栏
-                wasmDecoding: true,
+                decoder: CFG.decoderJs,
+                decodingPath: CFG.decodingDir,
+                showBandwidth: true,
+                controlAutoHide: true,
                 heartTimeout: 30,
                 heartTimeoutReplay: true,
                 retryTimeout: 3000,
                 retryMaxTimes: 3,
+                isNotMute: !muted,
                 debug: false,
-                muted: isMutedFlag,
-            };
-
-            // 🔥 创建新实例
-            player = new Jessibuca(options);
-
-            player.on('load', () => {
-                console.log('[事件] 流加载成功');
-                setStatus('playing', '播放中');
-                showTip('✅ 直播流已加载');
-            });
-
-            player.on('play', () => {
-                console.log('[事件] 开始播放');
-                setStatus('playing', '播放中');
-                if (player && isMutedFlag && typeof player.mute === 'function') {
-                    player.mute(true);
+                operateBtns: {
+                    fullscreen: true,
+                    screenshot: false,
+                    play: true,
+                    audio: true,
+                    recorder: false
                 }
             });
 
-            player.on('error', (err) => {
-                console.error('[事件] 播放错误', err);
-                setStatus('error', '错误');
-                let errMsg = typeof err === 'string' ? err : (err?.message || JSON.stringify(err));
-                showTip(`❌ 播放错误: ${errMsg.substring(0, 100)}`, true);
-            });
+            bindEvents();
+            updateMuteBtn();
 
-            player.on('timeout', () => {
-                console.warn('[事件] 流超时');
-                setStatus('error', '流超时');
-                showTip('⚠️ 连接超时，播放器将尝试重连', true);
-            });
+            if (seq !== playSeq) { hardReset(); return; }
 
-            player.on('loadmetadata', () => {
-                console.log('[事件] 获取到流信息');
-            });
-
-            // 延迟调用播放
-            setTimeout(() => {
-                if (player && typeof player.play === 'function') {
-                    player.play(url.trim()).catch(e => {
-                        console.warn('play()调用失败', e);
-                        setStatus('error', '播放失败');
-                        showTip('播放失败: ' + (e.message || '未知错误'), true);
+            if (typeof player.play === 'function') {
+                var p = player.play(url);
+                if (p && typeof p.catch === 'function') {
+                    p.catch(function (e) {
+                        console.warn('play() 调用失败', e);
+                        handleError(normalizeError(e).raw || e);
                     });
                 }
-            }, 150);
-
-            return true;
-        } catch (err) {
-            console.error('初始化播放器异常:', err);
-            setStatus('error', '初始化失败');
-            showTip(`初始化异常: ${err.message}`, true);
-            showPlaceholder('播放器初始化失败，请重试');
-            return false;
-        }
-    }
-
-    // 停止播放
-    function stopPlay() {
-        if (player) {
-            try {
-                player.destroy();
-                destroyPlayer();
-            } catch (e) {
-                console.warn(e);
             }
-            player = null;
+        } catch (e) {
+            console.error('初始化播放器异常', e);
+            var msg = (e && e.message) ? e.message : String(e);
+
+            if (/already|created|can not be created/i.test(msg)) {
+                console.warn('容器标记残留，强制换节点后重试');
+                hardReset();
+                await sleep(CFG.rebuildGap);
+                if (seq !== playSeq) return;
+                freshContainer();
+                try {
+                    player = new Jessibuca({
+                        container: containerEl,
+                        autoplay: true,
+                        isResize: true,
+                        useMSE: false,
+                        useWCS: false,
+                        videoBuffer: 0.2,
+                        loadingText: '加载中...',
+                        decoder: CFG.decoderJs,
+                        decodingPath: CFG.decodingDir,
+                        heartTimeout: 30,
+                        heartTimeoutReplay: true,
+                        retryTimeout: 3000,
+                        retryMaxTimes: 3,
+                        isNotMute: !muted,
+                        debug: false
+                    });
+                    bindEvents();
+                    updateMuteBtn();
+                    if (typeof player.play === 'function') player.play(url);
+                    return;
+                } catch (e2) {
+                    msg = (e2 && e2.message) ? e2.message : String(e2);
+                }
+            }
+
+            setStatus('error', '初始化失败');
+            showPlaceholder('播放器初始化失败，请检查 decoder.js / decoder.wasm 路径');
+            tip('初始化异常: ' + msg, true);
         }
-        showPlaceholder('播放已停止');
+    }
+
+    function stopPlay() {
+        manualStop = true;
+        retryCount = 0;
+        playSeq++;
+        hardReset();
         currentUrl = '';
+        freshContainer();
+        showPlaceholder('播放已停止');
+        setStatus('idle', '已停止');
     }
 
-    // 静音切换
-    function toggleMute() {
-        if (!player) {
-            showTip('播放器未启动，无法静音', true);
-            return;
-        }
-        isMutedFlag = !isMutedFlag;
-        if (typeof player.mute === 'function') {
-            player.mute(isMutedFlag);
-            muteBtn.innerHTML = isMutedFlag ? '🔊 取消静音' : '🔇 静音';
-            showTip(isMutedFlag ? '已静音' : '已取消静音');
-        } else {
-            showTip('当前版本不支持 mute 方法', true);
-        }
-    }
-
-    // 播放按钮逻辑
-    async function onPlayClick() {
-        const url = urlInput.value.trim();
-        if (!url) {
-            showTip('请在输入框中填写直播流地址 (例如 http://xxx.flv)', true);
-            return;
-        }
-        currentUrl = url;
-        await startPlay(url);
-    }
-
-    // ================= 新增核心功能: 粘贴按钮 =================
-    // 点击「粘贴」按钮时，从系统剪贴板读取文本，并填入地址栏，同时可选自动播放（不自动播放，只填入，由用户决定是否播放）
-    async function handlePasteToInput() {
-        // 检查剪贴板API可用性
+    async function pasteFromClipboard() {
         if (!navigator.clipboard || !navigator.clipboard.readText) {
-            // 降级: 提示用户使用 Ctrl+V 手动粘贴
-            showTip('⚠️ 当前浏览器不支持一键粘贴，请手动复制后按 Ctrl+V', true);
-            // 让输入框获得焦点，方便用户直接Ctrl+V
+            tip('当前环境不支持一键粘贴，请手动 Ctrl+V', true);
             urlInput.focus();
             return;
+        }
+        try {
+            var text = (await navigator.clipboard.readText() || '').trim();
+            if (!text) { tip('📭 剪贴板为空', true); return; }
+            urlInput.value = text;
+            urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+            urlInput.focus();
+            urlInput.setSelectionRange(text.length, text.length);
+            startPlay(text);
+        } catch (err) {
+            var msg = '无法读取剪贴板，请手动粘贴';
+            if (err && err.name === 'NotAllowedError') msg = '🔒 剪贴板权限被拒，请手动 Ctrl+V';
+            if (err && err.name === 'SecurityError') msg = '🔒 需要 HTTPS 或 localhost 才能读剪贴板';
+            tip(msg, true);
+            urlInput.focus();
+        }
+    }
+
+    function init() {
+        var param = new URLSearchParams(location.search).get('url');
+        if (param) {
+            urlInput.value = param;
+        } else {
+            try {
+                var last = localStorage.getItem(CFG.storeKey);
+                if (last) urlInput.value = last;
+            } catch (e) {}
         }
 
         try {
-            const clipboardText = await navigator.clipboard.readText();
-            if (clipboardText && clipboardText.trim() !== "") {
-                const pastedValue = clipboardText.trim();
-                // 更新输入框的值
-                urlInput.value = pastedValue;
-                // 触发 input 事件，便于其他监听
-                urlInput.dispatchEvent(new Event('input', { bubbles: true }));
-                // 显示成功提示，并展示简略内容
-                let displayShort = pastedValue.length > 55 ? pastedValue.substring(0, 52) + '...' : pastedValue;
-                //showTip(`✅ 已粘贴: ${displayShort}`, false);
-                // 将光标置于末尾
-                urlInput.focus();
-                urlInput.setSelectionRange(urlInput.value.length, urlInput.value.length);
-                //自动播放
-                onPlayClick();
-                // 可选: 自动播放？不自动播放，仅填充，尊重用户操作习惯；但也可加个额外提醒
-                // 如果当前播放器没在播放且希望快速测试，用户可以点击播放按钮
-            } else {
-                showTip('📭 剪贴板为空，请先复制直播地址', true);
-            }
-        } catch (err) {
-            console.warn('读取剪贴板失败: ', err);
-            let errorMsg = '❌ 无法访问剪贴板，请检查权限或手动粘贴';
-            if (err.name === 'NotAllowedError') {
-                errorMsg = '🔒 需要授权剪贴板权限，请手动粘贴 (Ctrl+V)';
-            } else if (err.name === 'SecurityError') {
-                errorMsg = '🔒 安全限制，请使用 HTTPS 或本地测试服务器';
-            }
-            showTip(errorMsg, true);
-            // 降级让用户手动粘贴
-            urlInput.focus();
-        }
-    }
+            if (localStorage.getItem(CFG.storeMute) === '1') muted = true;
+        } catch (e) {}
+        updateMuteBtn();
 
-    // 页面初始化占位
-    function initPlaceholder() {
-        showPlaceholder('请输入 FLV/WS 地址开始播放');
-        // 预设示例为空，让用户输入
-        urlInput.value = '';
+        showPlaceholder('请输入 FLV / WS 地址后点击播放');
         setStatus('idle', '待机');
-    }
 
-    // 事件绑定
-    playBtn.addEventListener('click', onPlayClick);
-    stopBtn.addEventListener('click', stopPlay);
-    muteBtn.addEventListener('click', toggleMute);
-    
-    // 粘贴按钮事件绑定 (关键新增)
-    if (pasteBtn) {
-        pasteBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            handlePasteToInput();
-        });
-        // 添加悬停提示
-        pasteBtn.setAttribute('title', '从剪贴板粘贴地址到输入框');
-    }
-    
-    // 输入框回车快捷播放
-    urlInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            onPlayClick();
+        playBtn.addEventListener('click', function () { startPlay(urlInput.value); });
+        stopBtn.addEventListener('click', stopPlay);
+        muteBtn.addEventListener('click', toggleMute);
+        diagBtn.addEventListener('click', diagnose);
+
+        if (pasteBtn) {
+            pasteBtn.setAttribute('title', '从剪贴板粘贴地址并直接播放');
+            pasteBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                pasteFromClipboard();
+            });
         }
-    });
-    
-    // 检测 file:// 协议警告
-    if (window.location.protocol === 'file:') {
-        const warn = document.createElement('div');
-        warn.style.position = 'fixed';
-        warn.style.bottom = '20px';
-        warn.style.right = '20px';
-        warn.style.backgroundColor = '#f59e0b';
-        warn.style.color = '#000';
-        warn.style.padding = '6px 14px';
-        warn.style.borderRadius = '20px';
-        warn.style.fontSize = '11px';
-        warn.style.fontWeight = 'bold';
-        warn.style.zIndex = '9999';
-        warn.innerHTML = '⚠️ file:// 协议限制网络请求，请使用 http-server 启动本地服务';
-        document.body.appendChild(warn);
+
+        urlInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); startPlay(urlInput.value); }
+        });
+
+        if (location.protocol === 'file:') {
+            var warn = document.createElement('div');
+            warn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#f59e0b;' +
+                'color:#000;padding:8px 14px;border-radius:20px;font-size:11px;' +
+                'font-weight:bold;z-index:9999;max-width:80vw;line-height:1.6;';
+            warn.textContent = '⚠️ file:// 协议会让 wasm 和跨域请求失效，请用 http-server 启动本地服务';
+            document.body.appendChild(warn);
+        }
+
+        window.addEventListener('beforeunload', function () {
+            try { if (player) player.destroy(); } catch (e) {}
+        });
     }
 
-    // 额外增加一个小功能: 如果粘贴后自动高亮或微提示，已经实现。
-    // 兼容手机端长按粘贴? 保留原生行为的同时按钮给予更多便利。
-    // 启动
-    initPlaceholder();
+    init();
+})();
 </script>
 </body>
 </html>
