@@ -15,26 +15,26 @@
         body {
             background: #0a0e1a;
             font-family: system-ui, 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            /*display: flex;*/
+            /*justify-content: center;*/
+            /*align-items: center;*/
             min-height: 100vh;
-            padding: 8px;
+            margin: 0;
+            padding: 1px;
             overflow-y: auto;
         }
 
         .player-card {
-            max-width: 1200px;
+            max-width: 100%;
             width: 100%;
             background: #000;
-            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            /*box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);*/
             border: 1px solid rgba(255, 255, 255, 0.08);
-            margin: auto;
+            /*margin: auto;*/
         }
 
-        .video-area {
+        /*.video-area {
             position: relative;
             pointer-events: auto;
             width: min(500px, calc((100vh - 120px) * 430 / 800));
@@ -43,7 +43,18 @@
             min-width: 320px;
             margin: 0 auto;
             flex-shrink: 0;
-        }
+        }*/
+        .video-area {
+		    position: relative;
+		    pointer-events: auto;
+		    width: 100%;       /* 宽度占满整屏 */
+		    height: 100vh;     /* 高度占满整个视口 */
+		    height: 100dvh;    /* 兼容移动端地址栏收起的动态视口高度 */
+		    background: #000;  /* 保持黑底，播放器内部会自动按比例居中 */
+		    margin: 0 auto;
+		    flex-shrink: 0;
+		    border-radius: 20px;
+		}
 
         #jessibuca-container {
             width: 100%;
@@ -53,20 +64,21 @@
         .controls-bar {
             background: rgba(16, 20, 30, 0.95);
             backdrop-filter: blur(12px);
-            padding: 8px 12px;
+            padding: 2px 2px;
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 2px;
             align-items: center;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .url-input-wrapper {
             flex: 4;
+            height: 20px;
             min-width: 200px;
             display: flex;
             background: #0f111a;
-            border-radius: 40px;
+            border-radius: 10px;
             border: 1px solid #2a2f42;
             transition: all 0.2s;
         }
@@ -77,11 +89,11 @@
         }
 
         .url-label {
-            padding: 0 12px;
+            padding: 0 4px;
             color: #8b95b5;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
-            line-height: 34px;
+            line-height: 20px;
             background: #1a1e2c;
             border-radius: 40px 0 0 40px;
             border-right: 1px solid #2a2f42;
@@ -102,11 +114,11 @@
         }
 
         .paste-label {
-            padding: 0 12px;
+            padding: 0 4px;
             color: #8b95b5;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 500;
-            line-height: 34px;
+            line-height: 20px;
             background: #1a1e2c;
             border-radius: 0 40px 40px 0;
             border-left: 1px solid #2a2f42;
@@ -135,7 +147,7 @@
             background: transparent;
             border: none;
             padding: 0 10px;
-            height: 34px;
+            height: 20px;
             color: #f0f3fa;
             font-size: 12px;
             font-family: monospace;
@@ -150,14 +162,14 @@
 
         .btn-group {
             display: flex;
-            gap: 6px;
+            gap: 2px;
             flex-wrap: wrap;
         }
 
         .btn {
-            padding: 0 14px;
-            height: 34px;
-            border-radius: 34px;
+            padding: 0 8px;
+            height: 20px;
+            border-radius: 10px;
             font-weight: 600;
             font-size: 12px;
             cursor: pointer;
@@ -210,7 +222,7 @@
 
         .dyn-btns {
             display: none;
-            gap: 6px;
+            gap: 2px;
             flex-wrap: wrap;
             align-items: center;
         }
@@ -291,7 +303,7 @@
 
         .toast-message {
             position: fixed;
-            bottom: 70px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%) translateY(20px);
             background: #1e253ecc;
@@ -342,7 +354,7 @@
 
             .toast-message {
                 font-size: 11px;
-                bottom: 60px;
+                bottom: 15px;
             }
 
             .toast-message.at-top {
@@ -373,17 +385,16 @@
         <div class="controls-bar">
             <div class="url-input-wrapper">
                 <span class="url-label" id="parseUrlBtn"
-                    title="点击读取剪贴板：支持 {&quot;名字1&quot;:&quot;url1&quot;,&quot;名字2&quot;:&quot;url2&quot;} 形式的地址组">🔎
-                    解析|播放</span>
+                    title="点击读取剪贴板：支持 {&quot;名字1&quot;:&quot;url1&quot;,&quot;名字2&quot;:&quot;url2&quot;} 形式的地址组">🔎播放地址</span>
                 <input type="text" id="streamUrl" placeholder="例如: http://xxx.xxx/live/stream.flv 或 ws://..." value="">
                 <span class="paste-label" id="pasteUrlBtn">粘贴地址</span>
             </div>
             <div class="btn-group">
-                <button class="btn btn-primary" id="playBtn">▶ 播放</button>
-                <button class="btn btn-danger" id="stopBtn">⏹ 停止</button>
+                <button class="btn btn-primary" id="playBtn">▶播放</button>
+                <button class="btn btn-danger" id="stopBtn">⏹停止</button>
                 <div class="dyn-btns" id="dynBtns"></div>
-                <button class="btn btn-warning" id="muteBtn">🔇 静音</button>
-                <button class="btn" id="diagBtn">🔍 检测</button>
+                <button class="btn btn-warning" id="muteBtn">🔇静音</button>
+                <button class="btn" id="diagBtn" style="display: none;">🔍检测</button>
             </div>
             <div class="status-area">
                 <div class="led" id="statusLed"></div>
@@ -393,7 +404,7 @@
 
         <div class="footer-tip">
             📌 支持 FLV (HTTP/HTTPS/WS) ｜ 解码器: jessibuca + decoder.wasm<br>
-            🗂 点「解析|播放」可读取剪贴板里的 {"名字":"地址"} 列表，一键切换多个直播流<br>
+            🗂 点「播放地址」可读取剪贴板里的 {"名字":"地址"} 列表，一键切换多个直播流<br>
             💡 报 fetchError 时先点「检测」，它会告诉你到底是 403 过期、404 写错，还是跨域被拦
         </div>
     </div>
@@ -589,7 +600,7 @@
                     var u = new URL(url);
                     return u.hostname.toLowerCase() === 'pl.ycscts.com';
                 } catch (e) {
-                    return false;   // 解析失败（比如不是完整 URL）也算不合法
+                    return false;
                 }
             }
 
@@ -782,6 +793,7 @@
                 console.error('[jessibuca error]', info.type, err);
 
                 setStatus('error', dict[0]);
+                diagBtn.style.display = ''; 
                 var extra = '';
                 if (info.type === 'fetchError') {
                     extra = ' 排查顺序：① 重新生成链接（auth_key 会过期）② 用「检测」看是否跨域 ③ 本地代理绕过';
@@ -858,7 +870,7 @@
 
             function updateMuteBtn() {
                 if (!muteBtn) return;
-                muteBtn.textContent = muted ? '🔊 取消静音' : '🔇 静音';
+                muteBtn.textContent = muted ? '🔊取消静音' : '🔇静音';
                 muteBtn.classList.toggle('is-muted', muted);
             }
 
@@ -919,8 +931,8 @@
                 player.on('load', function () {
                     retryCount = 0;
                     setStatus('playing', activeName ? ('播放中：' + activeName) : '播放中');
-                    tip(activeName ? ('✅ 已加载：' + activeName) : '✅ 直播流已加载');
-
+                    tip(activeName ? ('✅已加载：' + activeName) : '✅直播流已加载');
+					diagBtn.style.display = 'none';
                     if (muted) {
                         applyMute(true);
                     }
@@ -935,7 +947,7 @@
                     setStatus('playing', activeName ? ('播放中：' + activeName) : '播放中');
                     if (muted) {
                         applyMute(true) 
-                    }else player.setVolume(CFG.BeforVolume);;
+                    }else player.setVolume(CFG.BeforVolume);
                 });
 
                 player.on('error', handleError);
@@ -943,7 +955,8 @@
                 player.on('timeout', function () {
                     console.warn('[事件] 流超时');
                     setStatus('error', '流超时');
-                    tip('⚠️ 连接超时，播放器将尝试重连', true);
+                    diagBtn.style.display = '';
+                    tip('⚠️连接超时，播放器将尝试重连', true);
                     if (!manualStop) scheduleRetry();
                 });
 
@@ -982,7 +995,7 @@
                 }
 
                 var tk = parseAuthKey(url);
-                if (tk && tk.expired) tip('⚠️ 该链接 auth_key 已于 ' + tk.text + ' 过期，播放大概率直接 403', true);
+                if (tk && tk.expired) tip('⚠️该链接 auth_key 已于 ' + tk.text + ' 过期，播放大概率直接 403', true);
 
                 var seq = ++playSeq;
 
@@ -1008,7 +1021,7 @@
                         isResize: true,
                         useMSE: false,
                         useWCS: false,
-                        videoBuffer: 0.2,
+                        videoBuffer: 0.5,
                         supportDblclickFullscreen: true,
                         loadingText: '加载中...',
                         decoder: CFG.decoderJs,
@@ -1017,10 +1030,12 @@
                         controlAutoHide: true,
                         heartTimeout: 30,
                         heartTimeoutReplay: true,
-                        retryTimeout: 3000,
+                        retryTimeout: 30000,
                         retryMaxTimes: 3,
                         isNotMute: !muted,
                         debug: false,
+                        preferredHardDecode: true,
+                        autoWasm: true,
                         operateBtns: {
                             fullscreen: true,
                             screenshot: false,
@@ -1158,7 +1173,38 @@
                 urlInput.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') { e.preventDefault(); startPlay(urlInput.value); }
                 });
+				urlInput.addEventListener('click', async function () {
+                    var text = urlInput.value.trim();
+                    if (!text) return;
 
+                    try {
+                        // 优先使用现代 Clipboard API
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            await navigator.clipboard.writeText(text);
+                            tip('📋地址已复制');
+                        } else {
+                            // 降级方案，兼容不支持 Clipboard API 的旧版浏览器或非 HTTPS 环境
+                            urlInput.select();
+                            var successful = document.execCommand('copy');
+                            if (successful) {
+                                tip('📋地址已复制');
+                            } else {
+                                tip('❌ 复制失败，请手动选择复制', true);
+                            }
+                            // 恢复光标位置到末尾，避免输入框保持全选状态
+                            var len = text.length;
+                            urlInput.setSelectionRange(len, len);
+                        }
+                    } catch (err) {
+                        console.warn('复制异常', err);
+                        // 处理常见的权限/协议错误
+                        if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+                            tip('🔒 剪贴板权限被拒或非 HTTPS 环境，无法自动复制', true);
+                        } else {
+                            tip('❌ 复制失败，请手动选择复制', true);
+                        }
+                    }
+                });
                 if (location.protocol === 'file:') {
                     var warn = document.createElement('div');
                     warn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#f59e0b;' +
