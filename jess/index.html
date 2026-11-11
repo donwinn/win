@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Jessibuca FLV 播放器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0e1a;
+            font-family: system-ui, 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1px;
+            overflow-y: auto;
+        }
+
+        .player-card {
+            max-width: 100%;
+            width: 100%;
+            background: #000;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .video-area {
+            position: relative;
+            pointer-events: auto;
+            width: 100%;       /* 宽度占满整屏 */
+            height: 100vh;     /* 高度占满整个视口 */
+            height: 100dvh;    /* 兼容移动端地址栏收起的动态视口高度 */
+            background: #000;  /* 保持黑底，播放器内部会自动按比例居中 */
+            margin: 0 auto;
+            flex-shrink: 0;
+            border-radius: 20px;
+        }
+
+        #jessibuca-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 新增：占位遮罩层，不破坏播放器 DOM */
+        .placeholder-overlay {
+            position: absolute;
+            inset: 0;
+            background: #0a0e18;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: #6a729b;
+            font-size: 14px;
+            text-align: center;
+            padding: 24px;
+            line-height: 1.8;
+            z-index: 10;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+            border-radius: 20px;
+        }
+        .placeholder-overlay.hidden {
+            opacity: 0;
+        }
+
+        .controls-bar {
+            background: rgba(16, 20, 30, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 2px 2px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .url-input-wrapper {
+            flex: 4;
+            height: 20px;
+            min-width: 200px;
+            display: flex;
+            background: #0f111a;
+            border-radius: 10px;
+            border: 1px solid #2a2f42;
+            transition: all 0.2s;
+        }
+
+        .url-input-wrapper:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        .url-label {
+            padding: 0 4px;
+            color: #8b95b5;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 20px;
+            background: #1a1e2c;
+            border-radius: 40px 0 0 40px;
+            border-right: 1px solid #2a2f42;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .url-label:hover {
+            background: #252b40;
+            color: #cdd6f4;
+        }
+
+        .url-label:active {
+            background: #10141f;
+            transform: scale(0.97);
+        }
+
+        .paste-label {
+            padding: 0 4px;
+            color: #8b95b5;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 20px;
+            background: #1a1e2c;
+            border-radius: 40px 0 0 40px;
+            border-right: 1px solid #2a2f42;
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .paste-label:hover {
+            background: #252b40;
+            color: #cdd6f4;
+            border-left-color: #3e455e;
+        }
+
+        .paste-label:active {
+            background: #10141f;
+            transform: scale(0.97);
+        }
+
+        #streamUrl {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 0 10px;
+            height: 20px;
+            color: #f0f3fa;
+            font-size: 12px;
+            font-family: monospace;
+            outline: none;
+            min-width: 0;
+        }
+
+        #streamUrl::placeholder {
+            color: #4a516e;
+            font-family: system-ui;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0 8px;
+            height: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            /*align-items: center;*/
+            gap: 4px;
+            background: #1e2538;
+            color: #e2e8ff;
+            border: 1px solid #323a52;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: scale(0.97);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: #1e1b12;
+        }
+
+        .btn-warning.is-muted {
+            background: #78350f;
+            border-color: #92400e;
+            color: #fde68a;
+        }
+
+        .dyn-btns {
+            display: none;
+            gap: 2px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .dyn-btn {
+            background: #1e2538;
+            border-color: #323a52;
+            color: #e2e8ff;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dyn-btn:hover {
+            background: #2a3350;
+            border-color: #3e4a6b;
+        }
+
+        .dyn-btn.active {
+            background: #3b82f6;
+            border-color: #93c5fd;
+            color: #fff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+        }
+
+        .status-area {
+            background: #0b0e16;
+            border-radius: 30px;
+            padding: 3px 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            border: 1px solid #292f42;
+            max-width: 100%;
+        }
+
+        .led {
+            width: 8px;
+            height: 8px;
+            border-radius: 10px;
+            background: #5b6380;
+            flex-shrink: 0;
+        }
+
+        .led.green {
+            background: #22c55e;
+            box-shadow: 0 0 6px #22c55e;
+        }
+
+        .led.red {
+            background: #ef4444;
+            box-shadow: 0 0 6px #ef4444;
+        }
+
+        .led.yellow {
+            background: #eab308;
+            box-shadow: 0 0 6px #eab308;
+        }
+
+        .status-text {
+            color: #bfc9f0;
+            font-family: monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .footer-tip {
+            font-size: 10px;
+            text-align: center;
+            padding: 6px 10px;
+            color: #5a6382;
+            background: #05070c;
+            border-top: 1px solid #181e2c;
+            line-height: 1.5;
+        }
+
+        .toast-message {
+            position: fixed;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #1e253ecc;
+            backdrop-filter: blur(12px);
+            color: #c0d0ff;
+            padding: 8px 16px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid #3d4570;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.2s, transform 0.2s;
+            font-family: monospace;
+            max-width: 90vw;
+            word-break: break-all;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .toast-message.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-message.at-top {
+            bottom: auto;
+            top: 16px;
+            transform: translateX(-50%) translateY(-20px);
+            box-shadow: 0 8px 22px rgba(220, 38, 38, 0.35);
+        }
+
+        .toast-message.at-top.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 700px) {
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-group {
+                justify-content: center;
+            }
+
+            .toast-message {
+                font-size: 11px;
+                bottom: 15px;
+            }
+
+            .toast-message.at-top {
+                top: 12px;
+                bottom: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-area {
+                width: 100%;
+                min-width: 0;
+                height: auto;
+                aspect-ratio: 430 / 800;
+            }
+        }
+    </style>
+    <link rel="icon" href="data:,">
+</head>
+
+<body>
+
+<div class="player-card">
+    <div class="video-area">
+        <div id="jessibuca-container"></div>
+        <div id="placeholderOverlay" class="placeholder-overlay">
+            <div style="font-size:48px;">📺</div>
+            <div id="placeholderText">等待播放</div>
+            <div style="font-size:11px;">Jessibuca 解码器待命</div>
+        </div>
+    </div>
+
+    <div class="controls-bar">
+        <div class="url-input-wrapper">
+                <span class="url-label" id="parseUrlBtn"
+                      title="点击读取剪贴板：支持 {&quot;名字1&quot;:&quot;url1&quot;,&quot;名字2&quot;:&quot;url2&quot;} 形式的地址组">🔎播放地址</span>
+            <input type="text" id="streamUrl" placeholder="例如: http://xxx.xxx/live/stream.flv 或 ws://..." value="">
+            <span class="paste-label" id="pasteUrlBtn">粘贴地址</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-primary" id="playBtn">▶播放</button>
+            <button class="btn btn-danger" id="stopBtn">⏹停止</button>
+            <div class="dyn-btns" id="dynBtns"></div>
+            <button class="btn btn-warning" id="muteBtn">🔇静音</button>
+            <button class="btn" id="diagBtn" style="display: none;">🔍检测</button>
+        </div>
+        <div class="status-area">
+            <div class="led" id="statusLed"></div>
+            <span class="status-text" id="statusMsg">待机</span>
+        </div>
+    </div>
+
+    <div class="footer-tip">
+        📌 支持 FLV (HTTP/HTTPS/WS) ｜ 解码器: jessibuca + decoder.wasm<br>
+        🗂 点「播放地址」可读取剪贴板里的 {"名字":"地址"} 列表，一键切换多个直播流<br>
+        💡 报 fetchError 时先点「检测」，它会告诉你到底是 403 过期、404 写错，还是跨域被拦
+    </div>
+</div>
+
+<div id="toastMsg" class="toast-message">提示信息</div>
+
+<script src="./js/jessibuca_v3.3.27.js"></script>
+<script src="./js/demo.js"></script>
+</body>
+
+</html>
